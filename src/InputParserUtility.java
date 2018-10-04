@@ -18,7 +18,7 @@ public class InputParserUtility {
 			return parseInput(lines);
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out.println("fail to read input file: " + e.getMessage());
+			System.out.println("fail to parse input file: " + e.getMessage());
 			return null;
 		}
 	}
@@ -29,20 +29,40 @@ public class InputParserUtility {
 				.map(line -> line.replaceAll("^\\s+", "")) // remove leading spaces
 				.filter(line -> (line.matches("^\\d+.*$"))) // filter lines that don't start with a digit
 				.map(line -> line.replaceAll("[^0-9 ].*$", "")) // remove nondigit values
+				.map(line -> line.replaceAll("\\s+$", "")) // remove trailing spaces
 				.collect(Collectors.toList()); //
 
 		lines.remove(0); // we don't need the list size; we'll infer it.
 
-		List<Person> people = lines.stream() //
+		List<Person> men = new ArrayList<Person>();
+		List<Person> women = new ArrayList<Person>();
+		for (int i = 0; i < lines.size(); i = i + 2) {
+			men.add(new Person());
+			women.add(new Person());
+		}
+
+
+		List<List<Integer>> preferenceLists = lines.stream() //
 				.map(line -> Arrays.stream(line.split("\\s+")) //
 						.map(Integer::valueOf) //convert Strings to Integers
 						.collect(Collectors.toList())) //
-				.map(Person::new) // pass the preference list to the Person constructor
 				.collect(Collectors.toList());
 
-		List<List<Person>> groups = List.of(
-				people.subList(0, people.size() / 2),
-				people.subList(people.size() / 2, people.size()));
+		for (Person man : men) {
+			List<Person> preferenceList = preferenceLists.remove(0).stream() //
+					.map(index -> women.get(index - 1)) //
+					.collect(Collectors.toList());
+			man.setPreferenceList(preferenceList);
+		}
+
+		for (Person woman : women) {
+			List<Person> preferenceList = preferenceLists.remove(0).stream() //
+					.map(index -> men.get(index - 1)) //
+					.collect(Collectors.toList());
+			woman.setPreferenceList(preferenceList);
+		}
+
+		List<List<Person>> groups = List.of(men, women);
 
 		return groups;
 	}
