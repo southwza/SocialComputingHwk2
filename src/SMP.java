@@ -12,49 +12,67 @@ public class SMP {
 
 		if (args[1].equalsIgnoreCase("m")) {
 			executeGSAlgorithm(groups, true);
+			printOutput(groups, true);
 		} else {
 			executeGSAlgorithm(groups, false);
+			printOutput(groups, false);
 		}
-
 
 	}
 
+	private static void printOutput(List<List<Person>> matchedPeople, boolean menFirst) {
+		List<Person> men = matchedPeople.get(0);
+		List<Person> women = matchedPeople.get(1);
+		for (int i = 0; i < men.size(); i++) {
+			int matchIndex;
+			if (menFirst) {
+				Person match = men.get(i).getMatch();
+				matchIndex = women.indexOf(match);
+			} else {
+				Person match = women.get(i).getMatch();
+				matchIndex = men.indexOf(match);
+			}
+			System.out.println("(" + (i + 1) + ", " + (matchIndex + 1) + ")");
+		}
+	}
+
 	private static void executeGSAlgorithm(List<List<Person>> groups, boolean manOptimal) {
-		List<Person> groupA;
-		List<Person> groupB;
+		List<Person> proposingGroup;
+		List<Person> receivingGroup;
 		if (manOptimal) {
-			groupA = groups.get(0);
-			groupB = groups.get(1);
+			proposingGroup = groups.get(0);
+			receivingGroup = groups.get(1);
 		} else {
-			groupA = groups.get(1);
-			groupB = groups.get(0);
+			proposingGroup = groups.get(1);
+			receivingGroup = groups.get(0);
 		}
 
-		LinkedList<Person> queue = new LinkedList<Person>(groupA);
+		LinkedList<Person> queue = new LinkedList<Person>(proposingGroup);
 		while (!queue.isEmpty()) {
 			Person proposer = queue.remove();
-			System.out.println("queue item" + groupA.indexOf(proposer) + ": " + proposer.toString());
-			Person acceptor = proposalRound(proposer, groupB);
+			Person acceptor = proposalRound(proposer, receivingGroup);
 			if (acceptor.getMatch() != null) {
 				queue.add(acceptor.getMatch());
 			}
 			acceptor.setMatch(proposer);
 		}
-		System.out.println("matching complete");
 	}
 
-	private static Person proposalRound(Person proposer, List<Person> groupB) {
-		int matchIndex = 0;
+	private static Person proposalRound(Person proposer, List<Person> receivingGroup) {
+		int preferenceListIndex = 0;
+
 		if (proposer.getLastRejected() != null) {
-			matchIndex = groupB.indexOf(proposer.getLastRejected()) + 1;
+			preferenceListIndex = proposer.getPreferenceList().indexOf(proposer.getLastRejected()) + 1;
 		}
+
+		Person possibleMatch = proposer.getPreferenceList().get(preferenceListIndex);
 		while (proposer.getMatch() == null) {
-			Person possibleMatch = groupB.get(matchIndex);
 			if (propose(proposer, possibleMatch)) {
 				proposer.setMatch(possibleMatch);
 				return possibleMatch;
 			} else {
-				matchIndex++;
+				preferenceListIndex++;
+				possibleMatch = proposer.getPreferenceList().get(preferenceListIndex);
 			}
 		}
 		//should never get here
